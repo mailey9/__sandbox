@@ -28,7 +28,7 @@
         - 만약, 과정 중 할당을 100개 넣고, 실제로 삭제가 일어나 현재는 2~3개 정도의 공간을 쓰고 있다면?
           이는 97개의 공간을 낭비하고 있는 것이다. 즉, "shrink()" 가 필요하다는 것.
 
-        - 이 operation 들이 th-safe 한가? 이걸 고민해봐야한다.
+        - 이 operation 들이 th-safe 한가? 이것도 고민해봐야한다.
 
 
 
@@ -61,17 +61,18 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <memory>
+
 
 namespace MinorLife
 {   
-    //template <typename T>
+    template <typename T>
     class DynArray
     {
         //static constexpr int default_capacity = 10;
 
-        using TData = int;
     private:
-        TData* datas;
+        T* datas;
 
         int length;
         int capacity;
@@ -84,7 +85,7 @@ namespace MinorLife
 
         DynArray(int capacity_)
             : length( 0 )
-            , capacity( capacity_ )
+            , capacity( 0 )
         {
             SetCapacity( capacity );
         }
@@ -117,8 +118,8 @@ namespace MinorLife
                 return false;
             }
 
-            datas = reinterpret_cast<TData*>(
-                ::realloc( datas, n * sizeof(TData) )
+            datas = reinterpret_cast<T*>(
+                ::realloc( datas, n * sizeof(T) )
                 );
 
             // allocation failed, as default behavior, error realloc's RV is 'null'.
@@ -130,8 +131,8 @@ namespace MinorLife
 
         void Shrink()
         {
-            datas = reinterpret_cast<TData*>(
-                ::realloc( datas, length * sizeof(TData) )
+            datas = reinterpret_cast<T*>(
+                ::realloc( datas, length * sizeof(T) )
                 );
 
             assert( datas != nullptr );
@@ -148,8 +149,9 @@ namespace MinorLife
             }
         }
 
-        void Add(TData data)
+        void Add(T data)
         {
+            printf("Add( T )\n");
             if ( length >= capacity )
             {
                 //SetCapacity( length + 1 );
@@ -161,7 +163,20 @@ namespace MinorLife
             length += 1;
         }
 
-        bool InsertAt(TData data, int index)
+        void Emplace(T&& data)
+        {
+            printf("Emplace( T&& )\n");
+            if ( length >= capacity )
+            {
+                Exapand();
+            }
+
+            
+            datas[ length ] = std::forward<T>( data );
+            length += 1;
+        }
+
+        bool InsertAt(T data, int index)
         {
             if ( index < 0 || index >= length )
             {
@@ -178,7 +193,7 @@ namespace MinorLife
             //  "위치" 에 데이터를 삽입한다.
 
             int nMove = length - index;
-            ::memmove( datas + index + 1, datas + index, nMove * sizeof(TData) );
+            ::memmove( datas + index + 1, datas + index, nMove * sizeof(T) );
             datas[ index ] = data;
             length += 1;
 
@@ -186,7 +201,7 @@ namespace MinorLife
         }
     public:
         // *operator overloads
-        TData& operator[]( int index )
+        T& operator[]( int index )
         {
             assert( index >= 0 && index < length );
             return datas[ index ];
