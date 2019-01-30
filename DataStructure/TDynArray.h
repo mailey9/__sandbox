@@ -94,6 +94,7 @@ namespace MinorLife
         {
             if ( datas != nullptr )
             {
+                //  this won't call dtor, so danger.
                 ::free( datas );
             }
         }
@@ -163,9 +164,10 @@ namespace MinorLife
             length += 1;
         }
 
-        void Emplace(T&& data)
+        /*void Emplace(T&& data)
         {
             printf("Emplace( T&& )\n");
+
             if ( length >= capacity )
             {
                 Exapand();
@@ -174,7 +176,7 @@ namespace MinorLife
             
             datas[ length ] = std::forward<T>( data );
             length += 1;
-        }
+        }*/
 
         bool InsertAt(T data, int index)
         {
